@@ -1,0 +1,5 @@
+profile: service
+defaultPackage: semantic.web
+---
+testFramework: junit
+sourceLanguage: java

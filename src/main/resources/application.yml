@@ -1,0 +1,9 @@
+micronaut:
+  application:
+    name: semantic-web
+  dbpedia:
+    organization: micronaut
+    repository: profiles
+    apiversion: v1
+  elasticsearch:
+    httpHosts: "http://localhost:9200,http://127.0.0.2:9200"
