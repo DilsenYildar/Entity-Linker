@@ -27,27 +27,9 @@ public class LanguageUtil {
     }
 
     private Set<String> createPunctuations() {
-        Set<String> punctuations = new HashSet<String>();
-        punctuations.add(".");
-        punctuations.add(",");
-        punctuations.add("?");
-        punctuations.add("!");
-        punctuations.add("'");
-        punctuations.add("\"");
-        punctuations.add(":");
-        punctuations.add(";");
-        punctuations.add("...");
-        punctuations.add("-");
-        punctuations.add("_");
-        punctuations.add("–");
-        punctuations.add("—");
-        punctuations.add("(");
-        punctuations.add(")");
-        punctuations.add("[");
-        punctuations.add("]");
-        punctuations.add("``");
-        punctuations.add("''");
-        return punctuations;
+        return new HashSet<>(
+                Arrays.asList(".", ",", "?", "!", "'", ";", "\"", ":", "-", "_", "–", "—", "(", ")", "[", "]", "...",
+                        "``", "''"));
     }
 
     public Set<String> getStopWords() {

@@ -29,11 +29,11 @@ dependencies {
     implementation "io.micronaut:micronaut-runtime"
     implementation "io.micronaut:micronaut-http-server-netty"
     implementation "io.micronaut:micronaut-http-client"
-    implementation files('libs/stanford-corenlp-3.9.2.jar')
-    implementation files('libs/stanford-corenlp-3.9.2-models.jar')
-    implementation files('libs/stanford-english-corenlp-2018-10-05-models.jar')
-    implementation files('libs/stanford-english-kbp-corenlp-2018-10-05-models.jar')
-    compile group: 'edu.stanford.nlp', name: 'stanford-corenlp', version: '3.9.2'
+//    implementation files('libs/stanford-corenlp-3.9.2.jar')
+//    implementation files('libs/stanford-corenlp-3.9.2-models.jar')
+//    implementation files('libs/stanford-english-corenlp-2018-10-05-models.jar')
+//    implementation files('libs/stanford-english-kbp-corenlp-2018-10-05-models.jar')
+//    compile group: 'edu.stanford.nlp', name: 'stanford-corenlp', version: '3.9.2'
 //    compile group: 'edu.stanford.nlp', name: 'stanford-corenlp', version: '3.9.2', classifier: 'models'
     runtimeOnly "ch.qos.logback:logback-classic:1.2.3"
     testAnnotationProcessor platform("io.micronaut:micronaut-bom:$micronautVersion")
@@ -42,6 +42,10 @@ dependencies {
     testImplementation "org.junit.jupiter:junit-jupiter-api"
     testImplementation "io.micronaut.test:micronaut-test-junit5"
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine"
+    compileOnly 'org.projectlombok:lombok:1.18.12'
+    annotationProcessor 'org.projectlombok:lombok:1.18.12'
+    testCompileOnly 'org.projectlombok:lombok:1.18.12'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.12'
 }
 
 test.classpath += configurations.developmentOnly
