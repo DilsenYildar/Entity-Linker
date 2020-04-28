@@ -37,12 +37,10 @@ public class DBPEDIAController {
 
     private final DBPEDIASPARQLClient dbpediasparqlClient;
 
-//    private NLPProcessor nlpProcessor;
 
     public DBPEDIAController(DBPEDIAClient dbpediaClient, DBPEDIASPARQLClient dbpediasparqlClient) {
         this.dbpediaClient = dbpediaClient;
         this.dbpediasparqlClient = dbpediasparqlClient;
-//        this.nlpProcessor = new NLPProcessor();
     }
 
 
@@ -80,16 +78,16 @@ public class DBPEDIAController {
         // todo:
         processedTokens = NLPUtil.removePunctuationAndStopWords(processedTokens);
 //        for (String token : processedTokens) {
-            Flowable<DbPediaSparqlResponse> DBPEDIAResult = dbpediasparqlClient.sparqlQueryDBPEDIA("device");
-            DbPediaSparqlResult sparqlResult = DBPEDIAResult.blockingFirst().getResults();
-            List<DbPediaSparqlBinding> bindings = sparqlResult.getBindings();
-            DbPediaSparqlControllerResponse dbPediaSparqlControllerResponse = new DbPediaSparqlControllerResponse();
-            dbPediaSparqlControllerResponse.setToken("device");
-            for (DbPediaSparqlBinding result : bindings) {
+        Flowable<DbPediaSparqlResponse> DBPEDIAResult = dbpediasparqlClient.sparqlQueryDBPEDIA("device");
+        DbPediaSparqlResult sparqlResult = DBPEDIAResult.blockingFirst().getResults();
+        List<DbPediaSparqlBinding> bindings = sparqlResult.getBindings();
+        DbPediaSparqlControllerResponse dbPediaSparqlControllerResponse = new DbPediaSparqlControllerResponse();
+        dbPediaSparqlControllerResponse.setToken("device");
+        for (DbPediaSparqlBinding result : bindings) {
 //                dbPediaSparqlControllerResponse.getClasses().add(result.getType().getValue());
 //                dbPediaSparqlControllerResponse.getRelatedResources().add(result.getResource().getValue());
-            }
-            response.add(dbPediaSparqlControllerResponse);
+        }
+        response.add(dbPediaSparqlControllerResponse);
 //        }
         return response;
     }

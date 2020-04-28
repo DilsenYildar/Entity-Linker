@@ -11,16 +11,20 @@ public class Neo4jClient implements AutoCloseable {
     private static final Neo4jClient client = new Neo4jClient();
 
     private Neo4jClient() {
-        this.driver = GraphDatabase.driver("", AuthTokens.basic("", ""));
+        this.driver = GraphDatabase.driver("bolt://localhost:7687", AuthTokens.basic("neo4j", "ozan123456"));
     }
 
     public static Neo4jClient getInstance() {
         return client;
     }
 
+    public Driver getDriver() {
+        return driver;
+    }
+
     @Override
     public void close() throws Exception {
         driver.close();
-        
+
     }
 }
