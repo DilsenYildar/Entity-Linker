@@ -86,8 +86,8 @@ public class DBPEDIAController {
             DbPediaSparqlControllerResponse dbPediaSparqlControllerResponse = new DbPediaSparqlControllerResponse();
             dbPediaSparqlControllerResponse.setToken("device");
             for (DbPediaSparqlBinding result : bindings) {
-                dbPediaSparqlControllerResponse.getClasses().add(result.getType().getValue());
-                dbPediaSparqlControllerResponse.getRelatedResources().add(result.getResource().getValue());
+//                dbPediaSparqlControllerResponse.getClasses().add(result.getType().getValue());
+//                dbPediaSparqlControllerResponse.getRelatedResources().add(result.getResource().getValue());
             }
             response.add(dbPediaSparqlControllerResponse);
 //        }
