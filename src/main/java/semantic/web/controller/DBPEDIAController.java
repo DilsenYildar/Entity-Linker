@@ -19,9 +19,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import semantic.web.client.DBPEDIAClient;
 import semantic.web.client.DBPEDIASPARQLClient;
+import semantic.web.client.Neo4jClient;
+import semantic.web.file.EntryWriter;
 import semantic.web.helper.*;
 import semantic.web.nlp.NLPUtil;
+import semantic.web.repository.EntryRepository;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Duration;
@@ -72,24 +77,30 @@ public class DBPEDIAController {
     }
 
     @Post(value = "/sparql", consumes = MediaType.APPLICATION_JSON, produces = MediaType.APPLICATION_JSON)
-    List<DbPediaSparqlControllerResponse> dbpediaSparql(TextAnalyzeRequest request) throws JsonProcessingException {
-        List<DbPediaSparqlControllerResponse> response = new ArrayList<>();
-        Set<String> processedTokens = getProcessedTokens(request.getText());
+    List<DbPediaSparqlControllerResponse> dbpediaSparql(TextAnalyzeRequest request) throws IOException {
+//        List<DbPediaSparqlControllerResponse> response = new ArrayList<>();
+//        Set<String> processedTokens = getProcessedTokens(request.getText());
         // todo:
-        processedTokens = NLPUtil.removePunctuationAndStopWords(processedTokens);
+//        processedTokens = NLPUtil.removePunctuationAndStopWords(processedTokens);
 //        for (String token : processedTokens) {
-        Flowable<DbPediaSparqlResponse> DBPEDIAResult = dbpediasparqlClient.sparqlQueryDBPEDIA("device");
-        DbPediaSparqlResult sparqlResult = DBPEDIAResult.blockingFirst().getResults();
-        List<DbPediaSparqlBinding> bindings = sparqlResult.getBindings();
+        String DBPEDIAResult = dbpediasparqlClient.sparqlQueryDBPEDIA(request.getText());
+        EntryWriter entryWriter = new EntryWriter();
+        String filePath = entryWriter.writeFiles(DBPEDIAResult);
+        EntryRepository entryRepository = new EntryRepository(Neo4jClient.getInstance());
+        entryRepository.saveEntry(filePath);
+
+        LOG.debug("saved success ");
+        //        DbPediaSparqlResult sparqlResult = DBPEDIAResult.blockingFirst().getResults();
+//        List<DbPediaSparqlBinding> bindings = sparqlResult.getBindings();
         DbPediaSparqlControllerResponse dbPediaSparqlControllerResponse = new DbPediaSparqlControllerResponse();
         dbPediaSparqlControllerResponse.setToken("device");
-        for (DbPediaSparqlBinding result : bindings) {
+//        for (DbPediaSparqlBinding result : bindings) {
 //                dbPediaSparqlControllerResponse.getClasses().add(result.getType().getValue());
 //                dbPediaSparqlControllerResponse.getRelatedResources().add(result.getResource().getValue());
-        }
-        response.add(dbPediaSparqlControllerResponse);
 //        }
-        return response;
+//        response.add(dbPediaSparqlControllerResponse);
+//        }
+        return null;
     }
 
 

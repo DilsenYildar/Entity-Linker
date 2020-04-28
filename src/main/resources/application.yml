@@ -9,3 +9,7 @@ micronaut:
     apiversion: v1
   neo4j:
     uri: bolt://localhost
+  http:
+      client:
+          read-timeout: 100s
+
