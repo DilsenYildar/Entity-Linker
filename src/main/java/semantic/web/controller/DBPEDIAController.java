@@ -19,7 +19,6 @@ import org.slf4j.LoggerFactory;
 import semantic.web.client.DBPEDIASPARQLClient;
 import semantic.web.file.EntryWriter;
 import semantic.web.helper.TextAnalyzeRequest;
-import semantic.web.nlp.NLPUtil;
 import semantic.web.repository.EntryRepository;
 
 import java.io.IOException;
@@ -45,7 +44,6 @@ public class DBPEDIAController {
     @Post(value = "/sparql", consumes = MediaType.APPLICATION_JSON, produces = MediaType.APPLICATION_JSON)
     String dbpediaSparql(TextAnalyzeRequest request) throws IOException {
         Set<String> processedTokens = getProcessedTokens(request.getText());
-        processedTokens = NLPUtil.removePunctuationAndStopWords(processedTokens); // pythona geçir..
         EntryWriter entryWriter = new EntryWriter();
         for (String token : processedTokens) {
             String DBPEDIAResult = dbpediasparqlClient.sparqlQueryDBPEDIA(token);
