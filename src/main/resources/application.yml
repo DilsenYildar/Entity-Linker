@@ -3,6 +3,7 @@ micronaut:
     name: semantic-web
   server:
       read-timeout: 60
+      port: 8081
   dbpedia:
     organization: micronaut
     repository: profiles

@@ -6,16 +6,16 @@ import java.util.UUID;
 
 public class EntryWriter {
 
-    public String writeFiles(String context) throws IOException {
-        String filePath = generateFilePath();
+    public String writeFiles(String term, String context) throws IOException {
+        String filePath = generateFilePath(term);
         try (FileWriter myWriter = new FileWriter(filePath)) {
             myWriter.write(context);
         }
         return filePath;
     }
 
-    private String generateFilePath() {
-        return System.getProperty("user.home") + "/neo4j/data/" + UUID.randomUUID().toString() + ".nt";
+    private String generateFilePath(String term) {
+        return System.getProperty("user.home") + "/neo4j/data/" + term.concat("-").concat(UUID.randomUUID().toString()) + ".nt";
     }
 
 }

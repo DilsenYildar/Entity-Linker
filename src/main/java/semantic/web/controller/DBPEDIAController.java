@@ -14,23 +14,20 @@ import io.micronaut.http.client.BlockingHttpClient;
 import io.micronaut.http.client.DefaultHttpClient;
 import io.micronaut.http.client.DefaultHttpClientConfiguration;
 import io.micronaut.http.client.HttpClientConfiguration;
-import io.reactivex.Flowable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import semantic.web.client.DBPEDIAClient;
 import semantic.web.client.DBPEDIASPARQLClient;
-import semantic.web.client.Neo4jClient;
 import semantic.web.file.EntryWriter;
-import semantic.web.helper.*;
+import semantic.web.helper.TextAnalyzeRequest;
 import semantic.web.nlp.NLPUtil;
 import semantic.web.repository.EntryRepository;
 
-import java.io.FileWriter;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Duration;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Set;
 
 @Controller("/dbpedia")
 public class DBPEDIAController {
@@ -38,69 +35,26 @@ public class DBPEDIAController {
 
     private static final ObjectMapper mapper = new ObjectMapper();
 
-    private final DBPEDIAClient dbpediaClient;
-
     private final DBPEDIASPARQLClient dbpediasparqlClient;
 
 
-    public DBPEDIAController(DBPEDIAClient dbpediaClient, DBPEDIASPARQLClient dbpediasparqlClient) {
-        this.dbpediaClient = dbpediaClient;
+    public DBPEDIAController(DBPEDIASPARQLClient dbpediasparqlClient) {
         this.dbpediasparqlClient = dbpediasparqlClient;
     }
 
-
-    @Post(consumes = MediaType.APPLICATION_JSON, produces = MediaType.APPLICATION_JSON)
-    List<EntryResult> dbpediaLookUp(TextAnalyzeRequest request) {
-        List<EntryResult> results = new ArrayList<>();
-//        CoreDocument document = nlpProcessor.analyzeText(request.getText());
-//        List<CoreSentence> sentences = nlpProcessor.getSentences(document);
-//        for (CoreSentence sentence : sentences) {
-//            Runnable runnableTask = () -> {
-//            List<CoreLabel> tokens = nlpProcessor.getTokens(sentence);
-//            tokens = NLPUtil.detectQuotes(tokens);
-//            tokens = NLPUtil.removePunctuation(tokens);
-//            tokens = NLPUtil.removeStopWords(tokens);
-//            NLPUtil.addTermsIntoTokens(sentence, tokens);
-//            for (CoreLabel token : tokens) {
-//                String stemmedToken = nlpProcessor.stemToken(token);
-//                Flowable<DbPediaLookUpResult> DBPEDIAResult = dbpediaClient.queryDBPEDIA(stemmedToken.toLowerCase(Locale.ENGLISH));
-//                EntryResult entryResult = new EntryResult();
-//                entryResult.setDbPediaLookUpResult(DBPEDIAResult.blockingFirst());
-//                entryResult.setToken(stemmedToken);
-//                results.add(entryResult);
-//            }
-//            };
-//            executor.execute(runnableTask);
-//        }
-
-        return results;
-    }
-
     @Post(value = "/sparql", consumes = MediaType.APPLICATION_JSON, produces = MediaType.APPLICATION_JSON)
-    List<DbPediaSparqlControllerResponse> dbpediaSparql(TextAnalyzeRequest request) throws IOException {
-//        List<DbPediaSparqlControllerResponse> response = new ArrayList<>();
-//        Set<String> processedTokens = getProcessedTokens(request.getText());
-        // todo:
-//        processedTokens = NLPUtil.removePunctuationAndStopWords(processedTokens);
-//        for (String token : processedTokens) {
-        String DBPEDIAResult = dbpediasparqlClient.sparqlQueryDBPEDIA(request.getText());
+    String dbpediaSparql(TextAnalyzeRequest request) throws IOException {
+        Set<String> processedTokens = getProcessedTokens(request.getText());
+        processedTokens = NLPUtil.removePunctuationAndStopWords(processedTokens); // pythona geçir..
         EntryWriter entryWriter = new EntryWriter();
-        String filePath = entryWriter.writeFiles(DBPEDIAResult);
-        EntryRepository entryRepository = new EntryRepository(Neo4jClient.getInstance());
-        entryRepository.saveEntry(filePath);
-
-        LOG.debug("saved success ");
-        //        DbPediaSparqlResult sparqlResult = DBPEDIAResult.blockingFirst().getResults();
-//        List<DbPediaSparqlBinding> bindings = sparqlResult.getBindings();
-        DbPediaSparqlControllerResponse dbPediaSparqlControllerResponse = new DbPediaSparqlControllerResponse();
-        dbPediaSparqlControllerResponse.setToken("device");
-//        for (DbPediaSparqlBinding result : bindings) {
-//                dbPediaSparqlControllerResponse.getClasses().add(result.getType().getValue());
-//                dbPediaSparqlControllerResponse.getRelatedResources().add(result.getResource().getValue());
-//        }
-//        response.add(dbPediaSparqlControllerResponse);
-//        }
-        return null;
+        for (String token : processedTokens) {
+            String DBPEDIAResult = dbpediasparqlClient.sparqlQueryDBPEDIA(token);
+            String filePath = entryWriter.writeFiles(token, DBPEDIAResult);
+            EntryRepository entryRepository = new EntryRepository();
+            entryRepository.saveEntry(filePath);
+            LOG.debug("saved success ");
+        }
+        return "success";
     }
 
 

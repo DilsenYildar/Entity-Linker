@@ -5,20 +5,28 @@ import org.neo4j.driver.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import semantic.web.client.Neo4jClient;
-import semantic.web.controller.DBPEDIAController;
 
 import static org.neo4j.driver.Values.parameters;
 
 
 public class EntryRepository {
 
-    private Neo4jClient neo4jClient;
-
-    public EntryRepository(Neo4jClient neo4jClient) {
-        this.neo4jClient = Neo4jClient.getInstance();
-    }
+    private final Neo4jClient neo4jClient;
 
     private static final Logger LOG = LoggerFactory.getLogger(EntryRepository.class);
+
+    public EntryRepository() {
+        this.neo4jClient = Neo4jClient.getInstance();
+        createIndex();
+    }
+
+    public void createIndex() {
+        try (Session session = neo4jClient.getDriver().session()) {
+            Query indexQuery = new Query("CREATE INDEX ON :Resource(uri)");
+            session.run(indexQuery);
+            LOG.debug("indexQuery: " + indexQuery.text());
+        }
+    }
 
     public void saveEntry(String filePath) {
         String adjustedFilePath = adjustFilePath(filePath);
