@@ -21,6 +21,7 @@ import semantic.web.file.EntryWriter;
 import semantic.web.helper.TextAnalyzeRequest;
 import semantic.web.repository.EntryRepository;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -47,7 +48,11 @@ public class DBPEDIAController {
         EntryWriter entryWriter = new EntryWriter();
         for (String token : processedTokens) {
             String DBPEDIAResult = dbpediasparqlClient.sparqlQueryDBPEDIA(token);
+            // todo: parse http://dbpedia.org/ontology while writing file.
             String filePath = entryWriter.writeFiles(token, DBPEDIAResult);
+            File file = new File(filePath);
+            // todo: read files by filtering resource and class.
+
             EntryRepository entryRepository = new EntryRepository();
             entryRepository.saveEntry(filePath);
             LOG.debug("saved success ");
