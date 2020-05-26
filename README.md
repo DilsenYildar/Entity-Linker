@@ -26,7 +26,6 @@ class properties:
             }`
             
 resource properties:
-
 `CONSTRUCT {
  <http://dbpedia.org/resource/The_Beatles>   ?property   ?value .
  }

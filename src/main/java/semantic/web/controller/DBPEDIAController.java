@@ -14,6 +14,10 @@ import io.micronaut.http.client.BlockingHttpClient;
 import io.micronaut.http.client.DefaultHttpClient;
 import io.micronaut.http.client.DefaultHttpClientConfiguration;
 import io.micronaut.http.client.HttpClientConfiguration;
+import org.apache.jena.rdf.model.*;
+import org.apache.jena.riot.Lang;
+import org.apache.jena.riot.RDFFormat;
+import org.apache.jena.riot.RDFParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import semantic.web.client.DBPEDIASPARQLClient;
@@ -21,13 +25,16 @@ import semantic.web.file.EntryWriter;
 import semantic.web.helper.TextAnalyzeRequest;
 import semantic.web.repository.EntryRepository;
 
-import java.io.File;
+import java.io.ByteArrayInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Duration;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
+
+import static org.apache.jena.riot.RDFDataMgr.read;
+import static org.apache.jena.riot.RDFDataMgr.write;
 
 @Controller("/dbpedia")
 public class DBPEDIAController {
@@ -37,6 +44,7 @@ public class DBPEDIAController {
 
     private final DBPEDIASPARQLClient dbpediasparqlClient;
 
+    private static final Set<String> ALLOWED_NAMESPACES = new HashSet<>(Arrays.asList("http://dbpedia.org", "http://www.w3.org"));
 
     public DBPEDIAController(DBPEDIASPARQLClient dbpediasparqlClient) {
         this.dbpediasparqlClient = dbpediasparqlClient;
@@ -48,10 +56,45 @@ public class DBPEDIAController {
         EntryWriter entryWriter = new EntryWriter();
         for (String token : processedTokens) {
             String DBPEDIAResult = dbpediasparqlClient.sparqlQueryDBPEDIA(token);
-            // todo: parse http://dbpedia.org/ontology while writing file.
+
+            Model model = ModelFactory.createDefaultModel();
             String filePath = entryWriter.writeFiles(token, DBPEDIAResult);
-            File file = new File(filePath);
-            // todo: read files by filtering resource and class.
+            read(model, filePath);
+
+            Set<Resource> subjects = new HashSet<>();
+            StmtIterator stmtIterator = model.listStatements();
+            List<Statement> statements = new ArrayList<>();
+            while (stmtIterator.hasNext()) {
+                Statement stmt = stmtIterator.nextStatement();
+                Resource subject = stmt.getSubject();
+                Property predicate = stmt.getPredicate();
+                RDFNode object = stmt.getObject();
+                if (ALLOWED_NAMESPACES.stream().noneMatch(
+                        ns -> subject.getNameSpace().startsWith(ns)) ||
+                        ALLOWED_NAMESPACES.stream().noneMatch(ns2 -> predicate.getNameSpace().startsWith(ns2)) || ALLOWED_NAMESPACES.stream().noneMatch(
+                                ns3 -> ((object instanceof Resource) && ((Resource) object).getNameSpace().startsWith(
+                                        ns3)) || object instanceof Literal)) {
+                    statements.add(stmt);
+                }
+                subjects.add(subject);
+            }
+            model.remove(statements);
+            subjects.forEach(subject -> {
+                if (subject.getURI().contains("http://dbpedia.org/resource")) {
+                    String resourceProperties =
+                            dbpediasparqlClient.sparqlResourceProperties("<".concat(subject.getURI()).concat(">"));
+                    Model resourcesModel = ModelFactory.createDefaultModel();
+                    RDFParser.create().lang(Lang.NTRIPLES).source(new ByteArrayInputStream(resourceProperties.getBytes())).parse(resourcesModel);
+                    model.add(resourcesModel);
+                } else if (subject.getURI().contains("http://dbpedia.org/ontology")) {
+                    String classProperties = dbpediasparqlClient.sparqlClassProperties("<".concat(subject.getURI()).concat(">"));
+                    Model classPropModel = ModelFactory.createDefaultModel();
+                    RDFParser.create().lang(Lang.NTRIPLES).source(new ByteArrayInputStream(classProperties.getBytes())).parse(classPropModel);
+                    model.add(classPropModel);
+                }
+            });
+            FileOutputStream file2 = new FileOutputStream(filePath);
+            write(file2, model, RDFFormat.NTRIPLES);
 
             EntryRepository entryRepository = new EntryRepository();
             entryRepository.saveEntry(filePath);
