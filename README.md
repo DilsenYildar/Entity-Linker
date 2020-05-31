@@ -2,14 +2,6 @@
 
 dbPediaQueries
 
-class hierarchy:\
-`CONSTRUCT {
-                <http://dbpedia.org/ontology/Organisation> rdfs:subClassOf ?parentclass .
-                 }
-                 WHERE {
-                 <http://dbpedia.org/ontology/Organisation> rdfs:subClassOf* ?parentclass .
-             }`
-
 types of given word:\ 
 `CONSTRUCT { 
                ?resource <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?type .
@@ -21,6 +13,14 @@ types of given word:\
                 ?resource <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?type .
             }`
 
+class hierarchy:\
+`CONSTRUCT {
+                <http://dbpedia.org/ontology/Organisation> rdfs:subClassOf ?parentclass .
+                 }
+                 WHERE {
+                 <http://dbpedia.org/ontology/Organisation> rdfs:subClassOf* ?parentclass .
+             }`
+             
 class properties:\
 `CONSTRUCT {
             <http://dbpedia.org/ontology/Organisation>  ?propertyType   ?property .

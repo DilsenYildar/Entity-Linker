@@ -12,5 +12,5 @@ micronaut:
     uri: bolt://localhost
   http:
       client:
-          read-timeout: 100s
+          read-timeout: 300s
 

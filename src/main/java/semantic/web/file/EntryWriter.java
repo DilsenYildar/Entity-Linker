@@ -14,7 +14,7 @@ public class EntryWriter {
         return filePath;
     }
 
-    private String generateFilePath(String term) {
+    public String generateFilePath(String term) {
         return System.getProperty("user.home") + "/neo4j/data/" + term.concat("-").concat(UUID.randomUUID().toString()) + ".nt";
     }
 
