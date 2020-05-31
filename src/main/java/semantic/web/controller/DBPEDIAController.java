@@ -15,9 +15,7 @@ import io.micronaut.http.client.DefaultHttpClient;
 import io.micronaut.http.client.DefaultHttpClientConfiguration;
 import io.micronaut.http.client.HttpClientConfiguration;
 import org.apache.jena.rdf.model.*;
-import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFFormat;
-import org.apache.jena.riot.RDFParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import semantic.web.client.DBPEDIASPARQLClient;
@@ -25,7 +23,6 @@ import semantic.web.file.EntryWriter;
 import semantic.web.helper.TextAnalyzeRequest;
 import semantic.web.repository.EntryRepository;
 
-import java.io.ByteArrayInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -55,44 +52,58 @@ public class DBPEDIAController {
         Set<String> processedTokens = getProcessedTokens(request.getText());
         EntryWriter entryWriter = new EntryWriter();
         for (String token : processedTokens) {
-            String DBPEDIAResult = dbpediasparqlClient.sparqlQueryDBPEDIA(token);
+            String rdfTypeResults = dbpediasparqlClient.sparqlRdfType(token);
 
             Model model = ModelFactory.createDefaultModel();
-            String filePath = entryWriter.writeFiles(token, DBPEDIAResult);
+            String filePath = entryWriter.writeFiles(token, rdfTypeResults);
             read(model, filePath);
+            filterSuitableNamespaces(model);
 
-            Set<Resource> subjects = new HashSet<>();
             StmtIterator stmtIterator = model.listStatements();
-            List<Statement> statements = new ArrayList<>();
             while (stmtIterator.hasNext()) {
                 Statement stmt = stmtIterator.nextStatement();
                 Resource subject = stmt.getSubject();
-                Property predicate = stmt.getPredicate();
+                // örnek beatles ın data ve object propertyleri
+//                if (subject.getURI().contains("http://dbpedia.org/resource")) {
+//                    String resourceProperties =
+//                            dbpediasparqlClient.sparqlResourceProperties("<".concat(subject.getURI()).concat(">"));
+//                    Model resourcesModel = ModelFactory.createDefaultModel();
+//                    RDFParser.create().lang(Lang.NTRIPLES).source(new ByteArrayInputStream(resourceProperties.getBytes())).parse(resourcesModel);
+//                    model.add(resourcesModel);
+//                }
+                // örnek beatles ın üst sınıflarının data ve object propertyleri
                 RDFNode object = stmt.getObject();
-                if (ALLOWED_NAMESPACES.stream().noneMatch(
-                        ns -> subject.getNameSpace().startsWith(ns)) ||
-                        ALLOWED_NAMESPACES.stream().noneMatch(ns2 -> predicate.getNameSpace().startsWith(ns2)) || ALLOWED_NAMESPACES.stream().noneMatch(
-                                ns3 -> ((object instanceof Resource) && ((Resource) object).getNameSpace().startsWith(
-                                        ns3)) || object instanceof Literal)) {
-                    statements.add(stmt);
+                if ((object instanceof Resource)) {
+                    String classHierarchy = dbpediasparqlClient.sparqlClassHierarchy(((Resource) object).getURI());
+                    // todo: s ile o aynı ise temizle
+                    Model model2 = ModelFactory.createDefaultModel();
+                    String filePath2 = entryWriter.writeFiles(token, classHierarchy);
+                    read(model2, filePath2);
+
+                    // todo: model2deki her class için alttaki 4 satırı yap
+//                    String classProperties = dbpediasparqlClient.sparqlClassProperties("<".concat(subject.getURI()).concat(">"));
+//                    Model classPropModel = ModelFactory.createDefaultModel();
+//                    RDFParser.create().lang(Lang.NTRIPLES).source(new ByteArrayInputStream(classProperties.getBytes())).parse(classPropModel);
+//                    model2.add(classPropModel);
                 }
-                subjects.add(subject);
             }
-            model.remove(statements);
-            subjects.forEach(subject -> {
-                if (subject.getURI().contains("http://dbpedia.org/resource")) {
-                    String resourceProperties =
-                            dbpediasparqlClient.sparqlResourceProperties("<".concat(subject.getURI()).concat(">"));
-                    Model resourcesModel = ModelFactory.createDefaultModel();
-                    RDFParser.create().lang(Lang.NTRIPLES).source(new ByteArrayInputStream(resourceProperties.getBytes())).parse(resourcesModel);
-                    model.add(resourcesModel);
-                } else if (subject.getURI().contains("http://dbpedia.org/ontology")) {
-                    String classProperties = dbpediasparqlClient.sparqlClassProperties("<".concat(subject.getURI()).concat(">"));
-                    Model classPropModel = ModelFactory.createDefaultModel();
-                    RDFParser.create().lang(Lang.NTRIPLES).source(new ByteArrayInputStream(classProperties.getBytes())).parse(classPropModel);
-                    model.add(classPropModel);
-                }
-            });
+
+//            Set<Resource> subjects = new HashSet<>();
+//            subjects.add(subject);
+//            subjects.forEach(subject -> {
+//                if (subject.getURI().contains("http://dbpedia.org/resource")) {
+//                    String resourceProperties =
+//                            dbpediasparqlClient.sparqlResourceProperties("<".concat(subject.getURI()).concat(">"));
+//                    Model resourcesModel = ModelFactory.createDefaultModel();
+//                    RDFParser.create().lang(Lang.NTRIPLES).source(new ByteArrayInputStream(resourceProperties.getBytes())).parse(resourcesModel);
+//                    model.add(resourcesModel);
+//                } else if (subject.getURI().contains("http://dbpedia.org/ontology")) {
+//                    String classProperties = dbpediasparqlClient.sparqlClassProperties("<".concat(subject.getURI()).concat(">"));
+//                    Model classPropModel = ModelFactory.createDefaultModel();
+//                    RDFParser.create().lang(Lang.NTRIPLES).source(new ByteArrayInputStream(classProperties.getBytes())).parse(classPropModel);
+//                    model.add(classPropModel);
+//                }
+//            });
             FileOutputStream file2 = new FileOutputStream(filePath);
             write(file2, model, RDFFormat.NTRIPLES);
 
@@ -101,6 +112,25 @@ public class DBPEDIAController {
             LOG.debug("saved success ");
         }
         return "success";
+    }
+
+    private void filterSuitableNamespaces(Model model) {
+        StmtIterator stmtIterator = model.listStatements();
+        List<Statement> statements = new ArrayList<>();
+        while (stmtIterator.hasNext()) {
+            Statement stmt = stmtIterator.nextStatement();
+            Resource subject = stmt.getSubject();
+            Property predicate = stmt.getPredicate();
+            RDFNode object = stmt.getObject();
+            if (ALLOWED_NAMESPACES.stream().noneMatch(
+                    ns -> subject.getNameSpace().startsWith(ns)) ||
+                    ALLOWED_NAMESPACES.stream().noneMatch(ns2 -> predicate.getNameSpace().startsWith(ns2)) || ALLOWED_NAMESPACES.stream().noneMatch(
+                            ns3 -> ((object instanceof Resource) && ((Resource) object).getNameSpace().startsWith(
+                                    ns3)) || object instanceof Literal)) {
+                statements.add(stmt);
+            }
+        }
+        model.remove(statements);
     }
 
 
