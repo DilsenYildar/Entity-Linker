@@ -37,9 +37,11 @@ public class EntryRepository {
             session.run(query);
         }
     }
+// home/ozan/sw_neo/data/nt...
 
     private String adjustFilePath(String oldFilepath) {
-        return "file://" + oldFilepath.replace(System.getProperty("user.home"), "/var/lib");
+//        return "file://" + oldFilepath.replace(System.getProperty("user.home"), "/var/lib");
+        return "file://" + oldFilepath.replace(System.getProperty("user.home") + "/sw_neo", "/var/lib/neo4j");
     }
 
 

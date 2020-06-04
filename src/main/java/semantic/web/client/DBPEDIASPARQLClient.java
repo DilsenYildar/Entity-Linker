@@ -12,12 +12,7 @@ public interface DBPEDIASPARQLClient {
     @Header(name = "Accept", value = "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9")
     String sparqlQueryDBPEDIA(String text);
 
-    @Get("/sparql?default-graph-uri=http%3A%2F%2Fdbpedia" +
-            ".org&format=text%2Fplain&timeout=300000&query=CONSTRUCT+%7B+%0D%0A+++++++++++++++%3Fresource+%3Chttp%3A" +
-            "%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type%3E+%3Ftype+" +
-            ".%0D%0A++++++++++++++++%7D%0D%0A++++++++++++++++WHERE+%7B%0D%0A++++++++++++++++%3Fresource+%3Chttp%3A%2F" +
-            "%2Fwww.w3.org%2F2000%2F01%2Frdf-schema%23label%3E+%3Flabel+" +
-            ".%0D%0A++++++++++++++++FILTER+%28lcase%28str%28%3Flabel%29%29+%3D+%22{text}%22%29%0D%0A++++++++++++++++FILTER+langMatches%28lang%28%3Flabel%29%2C%27en%27%29%0D%0A++++++++++++++++%3Fresource+%3Chttp%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type%3E+%3Ftype+.%0D%0A++++++++++++%7D&format=text%2Fplain&CXML_redir_for_subjs=121&CXML_redir_for_hrefs=&timeout=300000&debug=on&run=+Run+Query+")
+    @Get("/sparql?default-graph-uri=http%3A%2F%2Fdbpedia.org&query=CONSTRUCT+%7B+%3Fresource+%3Chttp%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type%3E+%3Ftype+.+%7D%0D%0AWHERE+%7B%0D%0A%3Fresource+%3Chttp%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type%3E+%3Ftype+.%0D%0A%3Fresource+%3Chttp%3A%2F%2Fwww.w3.org%2F2000%2F01%2Frdf-schema%23label%3E+%3Flabel+.%0D%0A%3Flabel+bif%3Acontains+%22%27{text}%27%22+.%0D%0AFILTER+%28langMatches%28lang%28%3Flabel%29%2C%27en%27%29%29%0D%0AFILTER+%28lcase%28str%28%3Flabel%29%29+%3D+%22{text}%22%29%0D%0A+%7D%0D%0A&format=text%2Fplain&CXML_redir_for_subjs=121&CXML_redir_for_hrefs=&timeout=1000000&debug=on&run=+Run+Query+")
     @Header(name = "Accept", value = "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9")
     String sparqlRdfType(String text);
 
