@@ -25,10 +25,7 @@ import semantic.web.file.EntryWriter;
 import semantic.web.helper.TextAnalyzeRequest;
 import semantic.web.repository.EntryRepository;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Duration;
@@ -56,87 +53,105 @@ public class DBPEDIAController {
     String dbpediaSparql(TextAnalyzeRequest request) throws IOException {
         Set<String> processedTokens = getProcessedTokens(request.getText());
         EntryWriter entryWriter = new EntryWriter();
-        LOG.debug(String.format("Processed tokens: %s", processedTokens));
+        LOG.info(String.format("Processed tokens: %s", processedTokens));
+        tokenProcessOperation(processedTokens, entryWriter);
+        LOG.info("saved success ");
+        return "success";
+    }
+
+    private void tokenProcessOperation(Set<String> processedTokens, EntryWriter entryWriter) {
         for (String token : processedTokens) {
             try {
-                Model model = ModelFactory.createDefaultModel();
+                Model rootModel = ModelFactory.createDefaultModel(); // todo: remove out for if thing is not in center
                 LOG.info(String.format("Token: %s", token));
                 if (!processedTokenMap.contains(token) || (token.startsWith("the ") && !processedTokenMap.contains(token.substring(3)))) {
-                    String rdfTypeResults = dbpediasparqlClient.sparqlRdfType(token);
-                    Model rdfTypeModel = ModelFactory.createDefaultModel();
-                    RDFParser.create().lang(Lang.NTRIPLES).source(new ByteArrayInputStream(rdfTypeResults.getBytes())).parse(model);
-                    model.add(rdfTypeModel);
-                    filterSuitableNamespaces(model);
-
-                    StmtIterator stmtIterator = model.listStatements();
+                    writeDbpediaRdfTypeResultsToModel(token, rootModel);
+                    StmtIterator stmtIterator = rootModel.listStatements();
                     Model tempRootModel = ModelFactory.createDefaultModel();
-                    tempRootModel.add(model);
+                    tempRootModel.add(rootModel);
                     boolean hasResult = false;
                     while (stmtIterator.hasNext()) {
                         hasResult = true;
                         Statement stmt = stmtIterator.nextStatement();
-                        Resource subject = stmt.getSubject();
-                        LOG.info(String.format("Subject URI: %s", subject.getURI()));
                         // örnek beatles ın data ve object propertyleri
-                        if (subject.getURI().contains("http://dbpedia.org/resource")) {
-                            LOG.info("Found resource...");
-                            String resourceProperties = dbpediasparqlClient.sparqlResourceProperties(
-                                    "<".concat(subject.getURI()).concat(">"));
-                            Model resourcesModel = ModelFactory.createDefaultModel();
-                            RDFParser.create().lang(Lang.NTRIPLES).source(
-                                    new ByteArrayInputStream(resourceProperties.getBytes())).parse(resourcesModel);
-                            filterSuitableNamespaces(resourcesModel);
-                            tempRootModel.add(resourcesModel);
-                        }
+                        writeDbPediaResourceResultsToModel(tempRootModel, stmt);
                         // örnek beatles ın üst sınıflarının data ve object propertyleri
-                        RDFNode object = stmt.getObject();
-                        if ((object instanceof Resource)) {
-                            LOG.info("Found class...");
-                            String classHierarchy = dbpediasparqlClient.sparqlClassHierarchy("<".concat(((Resource) object).getURI()).concat(">"));
-                            // todo: s ile o aynı ise temizle
-                            Model classModel = ModelFactory.createDefaultModel();
-                            RDFParser.create().lang(Lang.NTRIPLES).source(new ByteArrayInputStream(classHierarchy.getBytes())).parse(classModel);
-                            filterSuitableNamespaces(classModel);
-                            tempRootModel.add(classModel);
-
-                            StmtIterator stmtIterator2 = classModel.listStatements();
-                            Model tempClassModel = ModelFactory.createDefaultModel();
-                            tempClassModel.add(classModel);
-                            while (stmtIterator2.hasNext()) {
-                                Statement statement = stmtIterator2.nextStatement();
-                                Resource classSubj = statement.getSubject();
-                                LOG.info(String.format("Class subject URI: %s", classSubj.getURI()));
-                                String classProperties = dbpediasparqlClient.sparqlClassProperties("<".concat(classSubj.getURI()).concat(">"));
-                                Model classPropModel = ModelFactory.createDefaultModel();
-                                RDFParser.create().lang(Lang.NTRIPLES).source(
-                                        new ByteArrayInputStream(classProperties.getBytes())).parse(classPropModel);
-                                tempClassModel.add(classPropModel);
-                            }
-                            tempRootModel.add(tempClassModel);
-                        }
+                        writeDbPediaClassHierarchiesToModel(tempRootModel, stmt);
                     }
+                    rootModel.add(tempRootModel);
                     if (hasResult) {
                         processedTokenMap.add(token.startsWith("the ") ? token.substring(3) : token);
                     }
-                    model.add(tempRootModel);
-
-                    String filePath = entryWriter.generateFilePath(token);
-                    FileOutputStream fileOs = new FileOutputStream(filePath);
-                    File file = new File(filePath);
-                    if (file.length() > 0) {
-                        write(fileOs, model, RDFFormat.NTRIPLES);
-                        LOG.info(String.format("File has written: %s", filePath));
-
-                        EntryRepository entryRepository = new EntryRepository();
-                        entryRepository.saveEntry(filePath);
-                    }
+                    writeModelToNeo4j(entryWriter, token, rootModel); // todo: remove out for if thing is not in center
                 }
             } catch (Exception e) {
                 LOG.error(String.format("could not processed token : %s ", token), e);
             }
         }
-        LOG.info("saved success ");
-        return "success";
+    }
+
+    private void writeDbPediaClassHierarchiesToModel(Model tempRootModel, Statement stmt) {
+        RDFNode object = stmt.getObject();
+        if (object instanceof Resource) {
+        LOG.info("Found class...");
+        // todo: s ile o aynı ise temizle
+        String classHierarchy = dbpediasparqlClient.sparqlClassHierarchy(
+                "<".concat(((Resource) object).getURI()).concat(">"));
+            Model classModel = ModelFactory.createDefaultModel();
+            RDFParser.create().lang(Lang.NTRIPLES).source(new ByteArrayInputStream(classHierarchy.getBytes())).parse(classModel);
+            filterSuitableNamespaces(classModel);
+
+            StmtIterator stmtIterator2 = classModel.listStatements();
+            Model tempClassModel = ModelFactory.createDefaultModel();
+            tempClassModel.add(classModel);
+            while (stmtIterator2.hasNext()) {
+                Statement statement = stmtIterator2.nextStatement();
+                Resource classSubj = statement.getSubject();
+                LOG.info(String.format("Class subject URI: %s", classSubj.getURI()));
+                String classProperties = dbpediasparqlClient.sparqlClassProperties(
+                        "<".concat(classSubj.getURI()).concat(">"));
+                Model classPropModel = ModelFactory.createDefaultModel();
+                RDFParser.create().lang(Lang.NTRIPLES).source(new ByteArrayInputStream(classProperties.getBytes())).parse(classPropModel);
+                tempClassModel.add(classPropModel);
+            }
+            tempRootModel.add(tempClassModel);
+        }
+    }
+
+    private void writeDbPediaResourceResultsToModel(Model tempRootModel, Statement stmt) {
+        Resource subject = stmt.getSubject();
+        LOG.info(String.format("Subject URI: %s", subject.getURI()));
+        if (subject.getURI().contains("http://dbpedia.org/resource")) {
+            LOG.info("Found resource...");
+            String resourceProperties = dbpediasparqlClient.sparqlResourceProperties(
+                    "<".concat(subject.getURI()).concat(">"));
+            Model resourcesModel = ModelFactory.createDefaultModel();
+            RDFParser.create().lang(Lang.NTRIPLES).source(
+                    new ByteArrayInputStream(resourceProperties.getBytes())).parse(resourcesModel);
+            filterSuitableNamespaces(resourcesModel);
+            tempRootModel.add(resourcesModel);
+        }
+    }
+
+    private void writeDbpediaRdfTypeResultsToModel(String token, Model model) {
+        String rdfTypeResults = dbpediasparqlClient.sparqlRdfType(token);
+        Model rdfTypeModel = ModelFactory.createDefaultModel();
+        RDFParser.create().lang(Lang.NTRIPLES).source(new ByteArrayInputStream(rdfTypeResults.getBytes())).parse(model);
+        model.add(rdfTypeModel);
+        filterSuitableNamespaces(model);
+    }
+
+    private void writeModelToNeo4j(EntryWriter entryWriter, String token, Model model) throws FileNotFoundException {
+        String filePath = entryWriter.generateFilePath(token);
+        FileOutputStream fileOs = new FileOutputStream(filePath);
+        File file = new File(filePath);
+        write(fileOs, model, RDFFormat.NTRIPLES);
+        LOG.info(String.format("File has written: %s", filePath));
+        if (file.length() > 0) {
+            LOG.info("Triples has written to neo4j");
+            EntryRepository entryRepository = new EntryRepository();
+            entryRepository.saveEntry(filePath);
+        }
     }
 
     private void filterSuitableNamespaces(Model model) {
