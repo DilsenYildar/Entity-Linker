@@ -123,8 +123,8 @@ public class DBPEDIAController {
                     String filePath = entryWriter.generateFilePath(token);
                     FileOutputStream fileOs = new FileOutputStream(filePath);
                     File file = new File(filePath);
+                    write(fileOs, model, RDFFormat.NTRIPLES);
                     if (file.length() > 0) {
-                        write(fileOs, model, RDFFormat.NTRIPLES);
                         LOG.info(String.format("File has written: %s", filePath));
 
                         EntryRepository entryRepository = new EntryRepository();

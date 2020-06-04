@@ -3,15 +3,15 @@
 dbPediaQueries
 
 types of given word:\ 
-`CONSTRUCT { 
-               ?resource <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?type .
-                }
-                WHERE {
-                ?resource <http://www.w3.org/2000/01/rdf-schema#label> ?label .
-                FILTER (lcase(str(?label)) = "the beatles")
-                FILTER langMatches(lang(?label),'en')
-                ?resource <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?type .
-            }`
+`CONSTRUCT { ?resource <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?type . }
+ WHERE {
+ ?resource <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?type .
+ ?resource <http://www.w3.org/2000/01/rdf-schema#label> ?label .
+ ?label bif:contains "'the phone'" .
+ FILTER (langMatches(lang(?label),'en'))
+ FILTER (lcase(str(?label)) = "the phone")
+  }
+`
 
 class hierarchy:\
 `CONSTRUCT {
