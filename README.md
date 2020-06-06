@@ -14,29 +14,33 @@ types of given word:\
 `
 
 class hierarchy:\
-`CONSTRUCT {
-                <http://dbpedia.org/ontology/Organisation> rdfs:subClassOf ?parentclass .
-                 }
-                 WHERE {
-                 <http://dbpedia.org/ontology/Organisation> rdfs:subClassOf* ?parentclass .
-             }`
+`CONSTRUCT { <http://dbpedia.org/ontology/Organisation> rdfs:subClassOf ?parentclass . 
+             ?parentclass rdfs:subClassOf ?superclass . ?parentclass
+            <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>  ?type .  }
+    WHERE { 
+            <http://dbpedia.org/ontology/Organisation> rdfs:subClassOf* ?parentclass . 
+            ?parentclass rdfs:subClassOf* ?superclass . 
+            ?parentclass <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>  ?type . 
+  }`
              
 class properties:\
-`CONSTRUCT {
-            <http://dbpedia.org/ontology/Organisation>  ?propertyType   ?property .
-                }
-                WHERE {
-                values ?propertyType { owl:DatatypeProperty owl:ObjectProperty }
-                ?property a ?propertyType ;
-                rdfs:domain/rdfs:subClassOf* <http://dbpedia.org/ontology/Organisation>.
-            }`
+`CONSTRUCT { 
+        <http://dbpedia.org/ontology/Organisation> ?propertyType ?property .
+        ?property  rdf:type ?type} 
+WHERE { 
+    values ?propertyType { owl:DatatypeProperty owl:ObjectProperty } 
+    ?property a ?propertyType ; rdfs:domain/rdfs:subClassOf* <http://dbpedia.org/ontology/Organisation>. 
+    ?property  rdf:type ?type
+}`
             
 resource properties:\
 `CONSTRUCT {
- <http://dbpedia.org/resource/The_Beatles>   ?property   ?value .
- }
- WHERE {
- { ?property a owl:DatatypeProperty } UNION { ?property a owl:ObjectProperty }      
-  <http://dbpedia.org/resource/The_Beatles> ?property  ?value 
-  FILTER (?property != <http://dbpedia.org/ontology/abstract>)            
- }`
+     <http://dbpedia.org/resource/The_Beatles>   ?property   ?value .
+     ?property rdf:type ?type .
+  }
+  WHERE {
+  { ?property a owl:DatatypeProperty } UNION { ?property a owl:ObjectProperty }      
+   <http://dbpedia.org/resource/The_Beatles> ?property  ?value .
+   ?property rdf:type ?type .
+   FILTER (?property != <http://dbpedia.org/ontology/abstract>)            
+  }`
