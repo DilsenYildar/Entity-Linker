@@ -14,6 +14,8 @@ import io.micronaut.http.client.BlockingHttpClient;
 import io.micronaut.http.client.DefaultHttpClient;
 import io.micronaut.http.client.DefaultHttpClientConfiguration;
 import io.micronaut.http.client.HttpClientConfiguration;
+import org.apache.jena.atlas.json.JsonArray;
+import org.apache.jena.atlas.json.JsonObject;
 import org.apache.jena.rdf.model.*;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFFormat;
@@ -54,18 +56,21 @@ public class DBPEDIAController {
         Set<String> processedTokens = getProcessedTokens(request.getText());
         EntryWriter entryWriter = new EntryWriter();
         LOG.info(String.format("Processed tokens: %s", processedTokens));
-        tokenProcessOperation(processedTokens, entryWriter);
-        LOG.info("saved success ");
-        return "success";
+        JsonObject jsonObject = tokenProcessOperation(processedTokens, entryWriter);
+        LOG.info(String.format("saved success: %s ", jsonObject.toString()));
+        return jsonObject.toString();
     }
 
-    private void tokenProcessOperation(Set<String> processedTokens, EntryWriter entryWriter) {
+    private JsonObject tokenProcessOperation(Set<String> processedTokens, EntryWriter entryWriter) {
+        JsonObject resultJson = new JsonObject();
         for (String token : processedTokens) {
             try {
-                Model rootModel = ModelFactory.createDefaultModel(); // todo: remove out for if thing is not in center
+                Model rootModel = ModelFactory.createDefaultModel();
                 LOG.info(String.format("Token: %s", token));
                 if (!processedTokenMap.contains(token) || (token.startsWith("the ") && !processedTokenMap.contains(token.substring(3)))) {
+                    JsonArray tokenUris = new JsonArray();
                     writeDbpediaRdfTypeResultsToModel(token, rootModel);
+                    resultJson.put(token, tokenUris);
                     StmtIterator stmtIterator = rootModel.listStatements();
                     Model tempRootModel = ModelFactory.createDefaultModel();
                     tempRootModel.add(rootModel);
@@ -73,6 +78,13 @@ public class DBPEDIAController {
                     while (stmtIterator.hasNext()) {
                         hasResult = true;
                         Statement stmt = stmtIterator.nextStatement();
+                        if (stmt.getObject() instanceof Resource) {
+                            Resource resource = (Resource) stmt.getObject();
+                            if (stmt.getSubject().getURI().startsWith("http://dbpedia.org/") && stmt.getPredicate().getURI().equals(
+                                    "http://www.w3.org/1999/02/22-rdf-syntax-ns#type") && resource.getURI().startsWith("http://dbpedia.org/ontology")) {
+                                tokenUris.add(resource.getURI());
+                            }
+                        }
                         // örnek beatles ın data ve object propertyleri
                         writeDbPediaResourceResultsToModel(tempRootModel, stmt);
                         // örnek beatles ın üst sınıflarının data ve object propertyleri
@@ -82,12 +94,13 @@ public class DBPEDIAController {
                     if (hasResult) {
                         processedTokenMap.add(token.startsWith("the ") ? token.substring(3) : token);
                     }
-                    writeModelToNeo4j(entryWriter, token, rootModel); // todo: remove out for if thing is not in center
+                    writeModelToNeo4j(entryWriter, token, rootModel);
                 }
             } catch (Exception e) {
                 LOG.error(String.format("could not processed token : %s ", token), e);
             }
         }
+        return resultJson;
     }
 
     private void writeDbPediaClassHierarchiesToModel(Model tempRootModel, Statement stmt) {

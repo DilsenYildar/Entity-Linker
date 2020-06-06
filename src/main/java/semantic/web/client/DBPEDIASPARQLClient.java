@@ -17,9 +17,10 @@ public interface DBPEDIASPARQLClient {
     String sparqlRdfType(String text);
 
     @Get("/sparql?default-graph-uri=http%3A%2F%2Fdbpedia" +
-            ".org&query=CONSTRUCT+%7B%0D%0A++++++++++++++++{classUri}+rdfs%3AsubClassOf+%3Fparentclass+" +
-            ".%0D%0A+++++++++++++++++%7D%0D%0A+++++++++++++++++WHERE+%7B%0D%0A+++++++++++++++++{classUri}+rdfs" +
-            "%3AsubClassOf*+%3Fparentclass+.%0D%0A+++++++++++++%7D&format=text%2Fplain&CXML_redir_for_subjs=121&CXML_redir_for_hrefs=&timeout=300000&debug=on&run=+Run+Query+")
+            ".org&query=CONSTRUCT+%7B+{classUri}+rdfs%3AsubClassOf+%3Fparentclass+" +
+            ".+%3Fparentclass+rdfs%3AsubClassOf+%3Fsuperclass+" +
+            ".%7D+WHERE+%7B+{classUri}+rdfs%3AsubClassOf*+%3Fparentclass+" +
+            ".+%3Fparentclass+rdfs%3AsubClassOf*+%3Fsuperclass+.%7D&format=text%2Fplain&CXML_redir_for_subjs=121&CXML_redir_for_hrefs=&timeout=30000&debug=on&run=+Run+Query+")
     @Header(name = "Accept", value = "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9")
     String sparqlClassHierarchy(String classUri);
 
