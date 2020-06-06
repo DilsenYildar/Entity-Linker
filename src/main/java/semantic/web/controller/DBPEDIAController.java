@@ -16,6 +16,7 @@ import io.micronaut.http.client.DefaultHttpClientConfiguration;
 import io.micronaut.http.client.HttpClientConfiguration;
 import org.apache.jena.atlas.json.JsonArray;
 import org.apache.jena.atlas.json.JsonObject;
+import org.apache.jena.ontology.OntModelSpec;
 import org.apache.jena.rdf.model.*;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFFormat;
@@ -65,7 +66,8 @@ public class DBPEDIAController {
         JsonObject resultJson = new JsonObject();
         for (String token : processedTokens) {
             try {
-                Model rootModel = ModelFactory.createDefaultModel();
+                Model rootModel = ModelFactory.createOntologyModel( OntModelSpec.OWL_MEM );
+
                 LOG.info(String.format("Token: %s", token));
                 if (!processedTokenMap.contains(token) || (token.startsWith("the ") && !processedTokenMap.contains(token.substring(3)))) {
                     JsonArray tokenUris = new JsonArray();
@@ -155,6 +157,7 @@ public class DBPEDIAController {
     }
 
     private void writeModelToNeo4j(EntryWriter entryWriter, String token, Model model) throws FileNotFoundException {
+        model.clearNsPrefixMap();
         String filePath = entryWriter.generateFilePath(token);
         FileOutputStream fileOs = new FileOutputStream(filePath);
         File file = new File(filePath);
