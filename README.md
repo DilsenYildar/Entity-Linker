@@ -89,7 +89,31 @@ CONSTRUCT {
 <http://dbpedia.org/resource/The_Beatles>  <http://dbpedia.org/ontology/formerBandMember> <http://dbpedia.org/resource/Ringo_Starr> .
 <http://dbpedia.org/resource/The_Beatles>  <http://dbpedia.org/ontology/formerBandMember> <http://dbpedia.org/resource/George_Harrison> .
 <http://dbpedia.org/resource/The_Beatles>  <http://dbpedia.org/ontology/formerBandMember> <http://dbpedia.org/resource/John_Lennon> .
-<http://dbpedia.org/resource/The_Beatles> <http://dbpedia.org/ontology/formerBandMember> <http://dbpedia.org/resource/Paul_McCartney> .<http://dbpedia.org/ontology/formerBandMember>  <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>  <http://www.w3.org/2002/07/owl#ObjectProperty> .<http://dbpedia.org/ontology/formerBandMember> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/1999/02/22-rdf-syntax-ns#Property> .
+<http://dbpedia.org/resource/The_Beatles> <http://dbpedia.org/ontology/formerBandMember> <http://dbpedia.org/resource/Paul_McCartney> .
+<http://dbpedia.org/ontology/formerBandMember>  <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>  <http://www.w3.org/2002/07/owl#ObjectProperty> .
+<http://dbpedia.org/ontology/formerBandMember> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/1999/02/22-rdf-syntax-ns#Property> .
 
 ```
 
+
+class instances:\
+`   
+SELECT DISTINCT ?s 
+WHERE { ?s rdf:type <http://dbpedia.org/ontology/Organisation> }
+`
+
+property limits:\
+` 
+CONSTRUCT {
+      <http://dbpedia.org/ontology/formerBandMember> rdfs:range ?range .
+      <http://dbpedia.org/ontology/formerBandMember> rdfs:domain ?domain .
+   }
+WHERE {
+ OPTIONAL {
+      <http://dbpedia.org/ontology/formerBandMember> rdfs:range ?range .
+ }
+ OPTIONAL {
+     <http://dbpedia.org/ontology/formerBandMember> rdfs:domain ?domain .   
+ }
+}
+`

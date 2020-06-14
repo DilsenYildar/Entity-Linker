@@ -108,9 +108,9 @@ public class DBPEDIAController {
     private void writeDbPediaClassHierarchiesToModel(Model tempRootModel, Statement stmt) {
         RDFNode object = stmt.getObject();
         if (object instanceof Resource) {
-        LOG.info("Found class...");
-        // todo: s ile o aynı ise temizle
-        String classHierarchy = dbpediasparqlClient.sparqlClassHierarchy(
+            LOG.info("Found class...");
+            // todo: s ile o aynı ise temizle
+            String classHierarchy = dbpediasparqlClient.sparqlClassHierarchy(
                 "<".concat(((Resource) object).getURI()).concat(">"));
             Model classModel = ModelFactory.createDefaultModel();
             RDFParser.create().lang(Lang.NTRIPLES).source(new ByteArrayInputStream(classHierarchy.getBytes())).parse(classModel);
@@ -123,11 +123,24 @@ public class DBPEDIAController {
                 Statement statement = stmtIterator2.nextStatement();
                 Resource classSubj = statement.getSubject();
                 LOG.info(String.format("Class subject URI: %s", classSubj.getURI()));
-                String classProperties = dbpediasparqlClient.sparqlClassProperties(
-                        "<".concat(classSubj.getURI()).concat(">"));
+                String instances = dbpediasparqlClient.sparqlClassInstances("<".concat(classSubj.getURI()).concat(">"));
+                Model instanceModel = ModelFactory.createDefaultModel();
+                RDFParser.create().lang(Lang.NTRIPLES).source(new ByteArrayInputStream(instances.getBytes())).parse(instanceModel);
+                tempClassModel.add(instanceModel);
+
+                String classProperties = dbpediasparqlClient.sparqlClassProperties("<".concat(classSubj.getURI()).concat(">"));
                 Model classPropModel = ModelFactory.createDefaultModel();
                 RDFParser.create().lang(Lang.NTRIPLES).source(new ByteArrayInputStream(classProperties.getBytes())).parse(classPropModel);
                 tempClassModel.add(classPropModel);
+
+                RDFNode o = statement.getObject();
+                if ((o instanceof Resource)) {
+                    Resource propertyUri = (Resource) o;
+                    String classConstraints = dbpediasparqlClient.sparqlClassConstraints("<".concat(propertyUri.getURI()).concat(">"));
+                    Model constraintModel = ModelFactory.createDefaultModel();
+                    RDFParser.create().lang(Lang.NTRIPLES).source(new ByteArrayInputStream(classConstraints.getBytes())).parse(constraintModel);
+                    tempClassModel.add(constraintModel);
+                }
             }
             tempRootModel.add(tempClassModel);
         }
@@ -145,6 +158,16 @@ public class DBPEDIAController {
                     new ByteArrayInputStream(resourceProperties.getBytes())).parse(resourcesModel);
             filterSuitableNamespaces(resourcesModel);
             tempRootModel.add(resourcesModel);
+
+            StmtIterator stmtIterator = resourcesModel.listStatements();
+            while (stmtIterator.hasNext()) {
+                Statement stmtResource = stmtIterator.nextStatement();
+                Resource propertyUri = stmtResource.getSubject();
+                String classConstraints = dbpediasparqlClient.sparqlClassConstraints("<".concat(propertyUri.getURI()).concat(">"));
+                Model constraintModel = ModelFactory.createDefaultModel();
+                RDFParser.create().lang(Lang.NTRIPLES).source(new ByteArrayInputStream(classConstraints.getBytes())).parse(constraintModel);
+                tempRootModel.add(constraintModel);
+            }
         }
     }
 

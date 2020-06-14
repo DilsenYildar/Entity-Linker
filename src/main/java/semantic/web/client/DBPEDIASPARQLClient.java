@@ -29,4 +29,12 @@ public interface DBPEDIASPARQLClient {
     @Header(name = "Accept", value = "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng," + "*/*;q=0.8," +
             "application/signed-exchange;v=b3;q=0.9")
     String sparqlResourceProperties(String resourceUri);
+
+    @Get("/sparql?default-graph-uri=http%3A%2F%2Fdbpedia" + ".org&query=SELECT+DISTINCT+%3Fs+%0D%0AWHERE+%7B+%3Fs+rdf%3Atype+{classUri}+%7D&format=text%2Fx-html" + "%2Btr&CXML_redir_for_subjs=121&CXML_redir_for_hrefs=&timeout=30000&debug=on&run=+Run+Query+")
+    @Header(name = "Accept", value = "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9")
+    String sparqlClassInstances(String classUri);
+    
+    @Get("/sparql?default-graph-uri=http%3A%2F%2Fdbpedia.org&query=CONSTRUCT+%7B%0D%0A++++++{propertyUri}+rdfs%3Arange+%3Frange+.%0D%0A++++++{propertyUri}+rdfs%3Adomain+%3Fdomain+.%0D%0A+++%7D%0D%0AWHERE+%7B%0D%0A+OPTIONAL+%7B%0D%0A++++++{propertyUri}+rdfs%3Arange+%3Frange+.%0D%0A+%7D%0D%0A+OPTIONAL+%7B%0D%0A+++++{propertyUri}+rdfs%3Adomain+%3Fdomain+.+++%0D%0A+%7D%0D%0A%7D&format=text%2Fx-html%2Btr&CXML_redir_for_subjs=121&CXML_redir_for_hrefs=&timeout=30000&debug=on&run=+Run+Query+")
+    @Header(name = "Accept", value = "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9")
+    String sparqlClassConstraints(String propertyUri);
 }
