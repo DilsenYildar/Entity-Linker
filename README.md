@@ -96,14 +96,16 @@ CONSTRUCT {
 ```
 
 
-class instances:\
-`   
+##### 5- Verilen class urisinin instance'larını döndürür.
+
+```SPARQL
 SELECT DISTINCT ?s 
 WHERE { ?s rdf:type <http://dbpedia.org/ontology/Organisation> }
-`
+```
 
-property limits:\
-` 
+##### 5- Verilen property'nin domain ve range kısıtlarını döndürür.
+
+```SPARQL
 CONSTRUCT {
       <http://dbpedia.org/ontology/formerBandMember> rdfs:range ?range .
       <http://dbpedia.org/ontology/formerBandMember> rdfs:domain ?domain .
@@ -116,4 +118,4 @@ WHERE {
      <http://dbpedia.org/ontology/formerBandMember> rdfs:domain ?domain .   
  }
 }
-`
+```
